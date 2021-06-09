@@ -1,3 +1,4 @@
 # Dapr
-un petit terrain de jeux autour des possibilités de dapr 
+A little playground around dapr possibilities
+
 https://dapr.io/
