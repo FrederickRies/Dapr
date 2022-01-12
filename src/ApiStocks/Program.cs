@@ -10,6 +10,8 @@ if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
 }
 
-app.MapGet("/", (Func<string>)(() => "Hello World!"));
+app.MapGet("items/{objectId}", (string objectId) => new Item(objectId, "abcd", 4));
 
 await app.RunAsync();
+
+public record Item(string Id, string Code, int Quantity);

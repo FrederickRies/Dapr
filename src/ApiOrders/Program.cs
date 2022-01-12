@@ -1,7 +1,10 @@
 using Dapr.Client;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting;
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 
@@ -13,12 +16,23 @@ if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
 }
 
-app.MapGet("/items/{item-id}", async (string itemId, CancellationToken cancellationToken) =>
+app.MapPost("checkout", async (Basket basket, CancellationToken cancellationToken) =>
 {
     using var client = new DaprClientBuilder().Build();
-    var result = client.CreateInvokeMethodRequest(HttpMethod.Get, "stocks", "items/" + itemId, cancellationToken);
-    await client.InvokeMethodAsync(result);
-
+    foreach (var item in basket.Items)
+    {
+        var request = client.CreateInvokeMethodRequest(HttpMethod.Get, "stocks", "items/" + item.Id, cancellationToken);
+        var response = await client.InvokeMethodWithResponseAsync(request);
+        if (!response.IsSuccessStatusCode)
+        {
+            return Results.UnprocessableEntity(); 
+        }
+    }
+    await client.PublishEventAsync("events", "order-accepted", basket, cancellationToken);
+    return Results.Ok();
 });
 
 await app.RunAsync();
+
+public record Item(string Id, int Quantity);
+public record Basket(string Id, IEnumerable<Item> Items);
