@@ -4,8 +4,10 @@ global using Microsoft.AspNetCore.Http;
 global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.Extensions.Hosting;
 global using System;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
+
 await using var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -13,7 +15,6 @@ if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
 }
 
-app.MapPost("/", (Func<string>)(() => "Hello World!"));
 app.MapPut("/{id}", async (Guid id) =>
 {
     return new StatusCodeResult(StatusCodes.Status404NotFound);
