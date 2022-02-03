@@ -1,53 +1,143 @@
 version: '3'
 services:
   ############################
-  # Node app + Dapr sidecar
+  # API Catalag
   ############################
-  nodeapp:
-    build: ./node
+  apicatalog-redis-store:
+    image: "redis:alpine"
     ports:
-      - "50002:50002"
-    depends_on:
-      - redis
-      - placement
+      - "5101:6379"
     networks:
-      - hello-dapr
-  nodeapp-dapr:
+      - dapr-shop
+  apicatalog-app:
+    build:
+      context: .
+      dockerfile: ./src/ApiCatalog/Dockerfile
+    ports:
+      - "5001:80"      
+      - "50001:50001"
+    depends_on:
+      - apicatalog-redis-store
+    networks:
+      - dapr-shop
+  apicatalog-dapr:
     image: "daprio/daprd:edge"
     command: ["./daprd",
-     "-app-id", "nodeapp",
-     "-app-port", "3000",
+     "-app-id", "apicatalog-app",
+     "-app-port", "80",     
+     "-dapr-grpc-port", "50001",
      "-placement-host-address", "placement:50006",
-     "-dapr-grpc-port", "50002",
-     "-components-path", "/components"]
+     "-components-path", "/dapr/dev/components",
+     "-config", "/dapr/dev/config.yaml"]
     volumes:
-        - "./components/:/components"
+        - "./src/ApiCatalog/dapr/:/dapr"
     depends_on:
-      - nodeapp
-    network_mode: "service:nodeapp"
+      - apicatalog-app
+    network_mode: "service:apicatalog-app"
   ############################
-  # Python app + Dapr sidecar
+  # Dapr deliveries
   ############################
-  pythonapp:
-    build: ./python
-    depends_on:
-      - redis
-      - placement
+  apideliveries-redis-store:
+    image: "redis:alpine"
+    ports:
+      - "6101:6379"
     networks:
-      - hello-dapr
-  pythonapp-dapr:
+      - dapr-shop
+  apideliveries-app:
+    build:
+      context: .
+      dockerfile: ./src/ApiDeliveries/Dockerfile
+    ports:
+      - "6001:80"      
+      - "50002:50001"
+    depends_on:
+      - apideliveries-redis-store
+    networks:
+      - dapr-shop
+  apideliveries-dapr:
     image: "daprio/daprd:edge"
     command: ["./daprd",
-    "-app-id", "pythonapp",
-    "-placement-host-address", "placement:50006",
-     "-components-path", "/components"]
+     "-app-id", "apideliveries-app",
+     "-app-port", "80",
+     "-dapr-grpc-port", "50002",
+     "-placement-host-address", "placement:50006",
+     "-components-path", "/dapr/dev/components",
+     "-config", "/dapr/dev/config.yaml"]
     volumes:
-      - "./components/:/components"
+      - "./src/ApiDeliveries/dapr/:/dapr"
     depends_on:
-      - pythonapp
-    network_mode: "service:pythonapp"
+      - apideliveries-app
+    network_mode: "service:apideliveries-app"
   ############################
-  # Dapr placement service
+  # Dapr orders
+  ############################
+  apiorders-redis-queue:
+    image: "redis:alpine"
+    ports:
+      - "7101:6379"
+    networks:
+      - dapr-shop
+  apiorders-app:
+    build:
+      context: .
+      dockerfile: ./src/ApiOrders/Dockerfile
+    ports:
+      - "7001:80"      
+      - "50003:50001"
+    depends_on:
+      - apiorders-redis-store
+    networks:
+      - dapr-shop
+  apiorders-dapr:
+    image: "daprio/daprd:edge"
+    command: ["./daprd",
+     "-app-id", "apiorders-app",     
+     "-app-port", "80",
+     "-dapr-grpc-port", "50003",
+     "-placement-host-address", "placement:50006",
+     "-components-path", "/dapr/dev/components",
+     "-config", "/dapr/dev/config.yaml"]
+    volumes:
+      - "./src/ApiOrders/dapr/:/dapr"
+    depends_on:
+      - apiorders-app
+    network_mode: "service:apiorders-app"
+  ############################
+  # Dapr stocks
+  ############################
+  apistocks-redis-store:
+    image: "redis:alpine"
+    ports:
+      - "8101:6379"
+    networks:
+      - dapr-shop
+  apistocks-app:
+    build:
+      context: .
+      dockerfile: ./src/ApiStocks/Dockerfile
+    ports:
+      - "8001:80"      
+      - "50004:50001"
+    depends_on:
+      - apistocks-redis-store
+    networks:
+      - dapr-shop
+  apistocks-dapr:
+    image: "daprio/daprd:edge"
+    command: ["./daprd",
+     "-app-id", "apistocks-app",    
+     "-app-port", "80",
+     "-dapr-grpc-port", "50004",
+     "-placement-host-address", "placement:50006",
+     "-components-path", "/dapr/dev/components",
+     "-config", "/dapr/dev/config.yaml"]
+    volumes:
+      - "./src/ApiStocks/dapr/:/dapr"
+    depends_on:
+      - apistocks-app
+    network_mode: "service:apistocks-app"
+  ############################
+  # Dapr services
   ############################
   placement:
     image: "daprio/dapr"
@@ -55,15 +145,19 @@ services:
     ports:
       - "50006:50006"
     networks:
-      - hello-dapr
-  ############################
-  # Redis state store
-  ############################
-  redis:
-    image: "redis:alpine"
+      - dapr-shop
+  dashboard:
+    image: "daprio/dashboard"
     ports:
-      - "6380:6379"
+      - "8080:8080"
     networks:
-      - hello-dapr
+      - dapr-shop
+  zipkin:
+    image: "openzipkin/zipkin"
+    ports:
+      - "9411:9411"
+    networks:
+      - dapr-shop
+
 networks:
-    hello-dapr:
+    dapr-shop:

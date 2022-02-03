@@ -1,0 +1,11 @@
+apiVersion: dapr.io/v1alpha1
+kind: Subscription
+metadata:
+  name: subscription
+spec:
+  topic: order-accepted
+  route: /checkout
+  pubsubname: orders
+scopes:
+- orderprocessing
+- checkout

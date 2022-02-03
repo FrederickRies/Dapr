@@ -1,8 +1,6 @@
 <Project>
  <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
-    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerfileContext>.</DockerfileContext>
     <LangVersion>preview</LangVersion>
  </PropertyGroup>
 </Project>

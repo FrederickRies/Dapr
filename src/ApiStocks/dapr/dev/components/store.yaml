@@ -1,0 +1,14 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: stocks
+spec:
+  type: state.redis
+  version: v1
+  metadata:
+  - name: redisHost
+    value: apistocks-redis-store:6379
+  - name: redisPassword
+    value: ""
+scopes:
+  - apistocks-app
